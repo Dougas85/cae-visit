@@ -11,15 +11,16 @@ app = Flask(__name__)
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
-# Inicializa o cliente Supabase se as variáveis estiverem configuradas
+# Inicialização protegida do Supabase
 supabase: Client = None
+
 if SUPABASE_URL and SUPABASE_KEY:
     try:
         supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
     except Exception as e:
-        print9f"Erro ao inializar o cloiente Supabase: {e}")
-    else:
-        print("Aviso: SUPABASE_URL ou SUPABASE_KEY não foram encontradas nas variáveis de ambiente.")
+        print(f"Erro ao inicializar o cliente Supabase: {e}")
+else:
+    print("Aviso: SUPABASE_URL ou SUPABASE_KEY não foram encontradas nas variáveis de ambiente.")
 
 # Mapeamento dos nomes dos campos para os rótulos de exibição
 ITENS_LABELS = {
@@ -64,7 +65,7 @@ def salvar():
         respostas_brutas = dados.get("respostas", {})
         foto_url = None
 
-        # 1. Processamento e Upload da Foto para o Supabase Storage (se enviado)
+        # 1. Processamento e Upload da Foto para o Supabase Storage
         if supabase and foto_base64 and "," in foto_base64:
             try:
                 header, encoded = foto_base64.split(",", 1)
