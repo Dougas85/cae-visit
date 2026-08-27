@@ -1,9 +1,17 @@
 import os
 import base64
 import uuid
+import io
 import requests
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_file
 from supabase import create_client, Client
+
+# Importações do ReportLab para PDF Nativo
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image as RLImage
+from reportlab.lib.units import inch
 
 app = Flask(__name__)
 
@@ -21,16 +29,16 @@ if SUPABASE_URL and SUPABASE_KEY:
 
 # Mapeamento mantido para formatação de relatórios/e-mails
 ITENS_LABELS = {
-    "item_organizada": "A unidade está organizada?",
-    "item_limpa": "A unidade está limpa?",
-    "item_efetivo": "A unidade está com o efetivo previsto?",
-    "item_residuo_mesa": "Há resíduo de mesa simples?",
-    "item_objetos_sem_inducao": "Existem objetos sem indução?",
-    "item_sro_saida": "O lado previsto para saída no SROWEB saiu para entrega?",
-    "item_gestor_qualidade": "O gestor acompanha os resultados de qualidade?",
-    "item_registros_normativos": "Os registros nos sistemas estão conforme os normativos?",
-    "item_sd_pratica": "O SD está implantado na prática conforme o previsto?",
-    "item_acompanhamento_processos": "Os gestores acompanham os processos internos?"
+    "item_organizada": "1. A unidade está organizada?",
+    "item_limpa": "2. A unidade está limpa?",
+    "item_efetivo": "3. A unidade está com o efetivo previsto?",
+    "item_residuo_mesa": "4. Há resíduo de mesa simples?",
+    "item_objetos_sem_inducao": "5. Existem objetos sem indução?",
+    "item_sro_saida": "6. O lado previsto para saída no SROWEB saiu para entrega?",
+    "item_gestor_qualidade": "7. O gestor acompanha os resultados de qualidade?",
+    "item_registros_normativos": "8. Os registros nos sistemas estão conforme os normativos?",
+    "item_sd_pratica": "9. O SD está implantado na prática conforme o previsto?",
+    "item_acompanhamento_processos": "10. Os gestores acompanham os processos internos?"
 }
 
 def obter_nome_localizacao(lat, lon):
@@ -51,6 +59,95 @@ def obter_nome_localizacao(lat, lon):
     return "Localização não identificada"
 
 
+def gerar_pdf_bytes(dados_relatorio):
+    """Gera o arquivo PDF em memória RAM utilizando ReportLab."""
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=letter,
+        rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36
+    )
+    
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle('TitleStyle', parent=styles['Heading1'], fontName='Helvetica-Bold', fontSize=16, textColor=colors.HexColor('#0F172A'), spaceAfter=4)
+    subtitle_style = ParagraphStyle('SubTitleStyle', parent=styles['Normal'], fontName='Helvetica', fontSize=9, textColor=colors.HexColor('#64748B'), spaceAfter=15)
+    section_style = ParagraphStyle('SectionStyle', parent=styles['Heading2'], fontName='Helvetica-Bold', fontSize=12, textColor=colors.HexColor('#0284C7'), spaceBefore=12, spaceAfter=6)
+    normal_style = ParagraphStyle('NormalStyle', parent=styles['Normal'], fontName='Helvetica', fontSize=9, textColor=colors.HexColor('#1E293B'))
+    
+    elements = []
+
+    # Cabeçalho
+    elements.append(Paragraph("Relatório de Inspeção Técnica", title_style))
+    elements.append(Paragraph("Sistema Qualidade & Operações", subtitle_style))
+
+    # Tabela de Identificação
+    data_id = [
+        [
+            Paragraph("<b>Coordenador:</b>", normal_style), Paragraph(dados_relatorio.get('coordenador', ''), normal_style),
+            Paragraph("<b>Data/Hora:</b>", normal_style), Paragraph(dados_relatorio.get('data_hora', ''), normal_style)
+        ],
+        [
+            Paragraph("<b>Unidade:</b>", normal_style), Paragraph(dados_relatorio.get('unidade_id', ''), normal_style),
+            Paragraph("<b>Localização:</b>", normal_style), Paragraph(dados_relatorio.get('localizacao', ''), normal_style)
+        ],
+        [
+            Paragraph("<b>Clima Percebido:</b>", normal_style), Paragraph(dados_relatorio.get('clima', ''), normal_style),
+            Paragraph("", normal_style), Paragraph("", normal_style)
+        ]
+    ]
+    
+    t_id = Table(data_id, colWidths=[1.1*inch, 2.5*inch, 1.1*inch, 2.5*inch])
+    t_id.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#F8FAFC')),
+        ('BOX', (0,0), (-1,-1), 1, colors.HexColor('#CBD5E1')),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#E2E8F0')),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('TOPPADDING', (0,0), (-1,-1), 6),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+    ]))
+    elements.append(t_id)
+
+    # Checklist
+    elements.append(Paragraph("Checklist de Conformidade", section_style))
+    
+    respostas = dados_relatorio.get('respostas', {})
+    data_chk = []
+    
+    for key, label in ITENS_LABELS.items():
+        resp = respostas.get(key, 'N/A')
+        cor_resp = '#059669' if resp == 'Sim' else '#DC2626'
+        
+        p_label = Paragraph(f"<b>{label}</b>", normal_style)
+        p_val = Paragraph(f"<font color='{cor_resp}'><b>{resp}</b></font>", ParagraphStyle('Val', parent=normal_style, alignment=1))
+        data_chk.append([p_label, p_val])
+
+    t_chk = Table(data_chk, colWidths=[6.2*inch, 1.0*inch])
+    t_chk.setStyle(TableStyle([
+        ('BOX', (0,0), (-1,-1), 1, colors.HexColor('#CBD5E1')),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#E2E8F0')),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('TOPPADDING', (0,0), (-1,-1), 5),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 5),
+    ]))
+    elements.append(t_chk)
+
+    # Foto da Evidência
+    foto_bytes = dados_relatorio.get('foto_bytes')
+    if foto_bytes:
+        elements.append(Paragraph("Evidência Fotográfica", section_style))
+        try:
+            img_stream = io.BytesIO(foto_bytes)
+            img = RLImage(img_stream, width=4.5*inch, height=3.0*inch)
+            elements.append(Spacer(1, 5))
+            elements.append(img)
+        except Exception as e:
+            print(f"Erro ao incluir foto no PDF: {e}")
+
+    doc.build(elements)
+    buffer.seek(0)
+    return buffer
+
+
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -62,7 +159,7 @@ def salvar():
         dados = request.get_json() or {}
 
         coordenador = dados.get("coordenador", "").strip()
-        unidade_id = str(dados.get("unidade_id", "")).strip() # Texto
+        unidade_id = str(dados.get("unidade_id", "")).strip()
         clima = dados.get("clima")
         latitude = dados.get("latitude")
         longitude = dados.get("longitude")
@@ -79,35 +176,30 @@ def salvar():
         localizacao_texto = obter_nome_localizacao(latitude, longitude)
         respostas_brutas = dados.get("respostas", {})
 
-        # Monta um resumo legível com base no ITENS_LABELS
-        resumo_itens = []
-        for chave, rotulo in ITENS_LABELS.items():
-            resposta = respostas_brutas.get(chave, "Não informado")
-            resumo_itens.append(f"{rotulo}: {resposta}")
-
         foto_url = None
+        conteudo_imagem = None
 
-        # 1. Upload da Foto no Storage
-        if supabase and foto_base64 and "," in foto_base64:
+        # Processamento da Foto
+        if foto_base64 and "," in foto_base64:
             try:
                 header, encoded = foto_base64.split(",", 1)
                 conteudo_imagem = base64.b64decode(encoded)
 
-                unidade_slug = "".join(c for c in unidade_id if c.isalnum())
-                nome_arquivo = f"visita_{unidade_slug}_{uuid.uuid4().hex[:8]}.jpg"
-                caminho_storage = f"fotos_unidades/{nome_arquivo}"
+                if supabase:
+                    unidade_slug = "".join(c for c in unidade_id if c.isalnum())
+                    nome_arquivo = f"visita_{unidade_slug}_{uuid.uuid4().hex[:8]}.jpg"
+                    caminho_storage = f"fotos_unidades/{nome_arquivo}"
 
-                supabase.storage.from_("evidencias-visitas").upload(
-                    path=caminho_storage,
-                    file=conteudo_imagem,
-                    file_options={"content-type": "image/jpeg"}
-                )
-
-                foto_url = supabase.storage.from_("evidencias-visitas").get_public_url(caminho_storage)
+                    supabase.storage.from_("evidencias-visitas").upload(
+                        path=caminho_storage,
+                        file=conteudo_imagem,
+                        file_options={"content-type": "image/jpeg"}
+                    )
+                    foto_url = supabase.storage.from_("evidencias-visitas").get_public_url(caminho_storage)
             except Exception as e:
-                print(f"Erro ao salvar foto no Storage: {str(e)}")
+                print(f"Erro ao processar foto: {str(e)}")
 
-        # 2. Payload da Tabela 'relatorios_visita'
+        # Salva no Banco Supabase
         payload_banco = {
             "coordenador_nome": coordenador,
             "unidade_id": unidade_id,
@@ -128,22 +220,31 @@ def salvar():
             "gestores_acompanham_processos": respostas_brutas.get("item_acompanhamento_processos") == "Sim"
         }
 
-        # 3. Inserção no Supabase
         if supabase:
-            resposta_db = supabase.table("relatorios_visita").insert(payload_banco).execute()
-            relatorio_id = resposta_db.data[0]["id"] if resposta_db.data else None
-        else:
-            relatorio_id = "Modo Local"
+            supabase.table("relatorios_visita").insert(payload_banco).execute()
 
-        return jsonify({
-            "status": "sucesso",
-            "mensagem": "Relatório registrado com sucesso!",
-            "relatorio_id": relatorio_id,
-            "localizacao_nome": localizacao_texto,
-            "resumo_detalhado": resumo_itens,
-            "foto_url": foto_url,
-            "destinatario": "douglas.francisco@correios.com.br"
-        }), 200
+        # Dados estruturados para o PDF
+        from datetime import datetime
+        dados_pdf = {
+            "coordenador": coordenador,
+            "unidade_id": unidade_id,
+            "clima": clima,
+            "localizacao": localizacao_texto,
+            "data_hora": datetime.now().strftime("%d/%m/%Y %H:%M"),
+            "respostas": respostas_brutas,
+            "foto_bytes": conteudo_imagem
+        }
+
+        # Gera o PDF em memória RAM e envia como Download nativo
+        pdf_io = gerar_pdf_bytes(dados_pdf)
+        unidade_slug = "".join(c for c in unidade_id if c.isalnum())
+
+        return send_file(
+            pdf_io,
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name=f"Relatorio_{unidade_slug}.pdf"
+        )
 
     except Exception as e:
         return jsonify({"status": "erro", "mensagem": f"Erro interno no servidor: {str(e)}"}), 500
