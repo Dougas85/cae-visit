@@ -7,12 +7,8 @@
     <!-- Tailwind CSS & Alpine.js -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <!-- html2pdf.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style> 
-        body { font-family: 'Inter', sans-serif; } 
-    </style>
+    <style> body { font-family: 'Inter', sans-serif; } </style>
 </head>
 <body class="h-full antialiased text-slate-800">
 
@@ -122,43 +118,6 @@
         </footer>
     </div>
 
-    <!-- TEMPLATE DO PDF RENDEREIZADO FORA DA TELA VISÍVEL PARA COMPATIBILIDADE MOBILE -->
-    <div style="position: absolute; left: -9999px; top: 0; width: 794px; background-color: #ffffff; padding: 30px; font-family: Arial, sans-serif; color: #1e293b;" id="pdf-template">
-        <div style="background-color: #0f172a; color: #ffffff; padding: 20px; border-radius: 6px; margin-bottom: 20px;">
-            <h2 style="margin:0; font-size:18pt; font-weight: bold;">Relatório de Inspeção Técnica</h2>
-            <p style="margin:4px 0 0 0; font-size:10pt; color:#94a3b8;">Sistema Qualidade & Operações</p>
-        </div>
-
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 10pt;">
-            <tr>
-                <td style="padding: 10px; border: 1px solid #cbd5e1; font-weight: bold; background-color: #f8fafc; width: 25%;">Coordenador:</td>
-                <td id="pdf-coordenador" style="padding: 10px; border: 1px solid #cbd5e1;"></td>
-                <td style="padding: 10px; border: 1px solid #cbd5e1; font-weight: bold; background-color: #f8fafc; width: 20%;">Data/Hora:</td>
-                <td id="pdf-data" style="padding: 10px; border: 1px solid #cbd5e1;"></td>
-            </tr>
-            <tr>
-                <td style="padding: 10px; border: 1px solid #cbd5e1; font-weight: bold; background-color: #f8fafc;">Unidade:</td>
-                <td id="pdf-unidade" style="padding: 10px; border: 1px solid #cbd5e1;"></td>
-                <td style="padding: 10px; border: 1px solid #cbd5e1; font-weight: bold; background-color: #f8fafc;">Localização:</td>
-                <td id="pdf-localizacao" style="padding: 10px; border: 1px solid #cbd5e1;"></td>
-            </tr>
-            <tr>
-                <td style="padding: 10px; border: 1px solid #cbd5e1; font-weight: bold; background-color: #f8fafc;">Clima Percebido:</td>
-                <td id="pdf-clima" colspan="3" style="padding: 10px; border: 1px solid #cbd5e1;"></td>
-            </tr>
-        </table>
-
-        <div style="font-size: 12pt; font-weight: bold; color: #0284c7; margin: 20px 0 10px 0; border-bottom: 2px solid #0284c7; padding-bottom: 4px;">Checklist de Conformidade</div>
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;" id="pdf-checklist-table">
-            <!-- Preenchido via JS -->
-        </table>
-
-        <div style="font-size: 12pt; font-weight: bold; color: #0284c7; margin: 20px 0 10px 0; border-bottom: 2px solid #0284c7; padding-bottom: 4px;">Evidência Fotográfica</div>
-        <div style="text-align:center; margin-top:15px;" id="pdf-foto-container">
-            <img id="pdf-foto-preview" style="max-width:100%; max-height:350px; border-radius:8px; border:1px solid #cbd5e1; display:none;">
-        </div>
-    </div>
-
     <script>
         function app() {
             return {
@@ -223,7 +182,6 @@
                     if (file) {
                         const reader = new FileReader();
                         reader.onload = (event) => {
-                            // Redimensionar para evitar travar leitores mobile com imagens gigantes
                             const img = new Image();
                             img.src = event.target.result;
                             img.onload = () => {
@@ -250,68 +208,27 @@
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(this.form)
                         });
-                        const data = await res.json();
+
                         if (res.ok) {
-                            await this.gerarPDF(data.localizacao_nome);
+                            const blob = await res.blob();
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.style.display = 'none';
+                            a.href = url;
+                            a.download = `Relatorio_${this.form.unidade_id.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`;
+                            document.body.appendChild(a);
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+
+                            alert('Relatório gravado e PDF baixado com sucesso!');
+                            window.location.reload();
                         } else {
-                            alert('Erro ao salvar: ' + data.mensagem);
+                            const errData = await res.json();
+                            alert('Erro ao salvar: ' + (errData.mensagem || 'Ocorreu um erro.'));
                             this.submitting = false;
                         }
                     } catch (e) {
                         alert('Falha na conexão com o servidor.');
-                        this.submitting = false;
-                    }
-                },
-                async gerarPDF(localizacaoNome) {
-                    document.getElementById('pdf-coordenador').innerText = this.form.coordenador;
-                    document.getElementById('pdf-unidade').innerText = this.form.unidade_id;
-                    document.getElementById('pdf-clima').innerText = this.form.clima;
-                    document.getElementById('pdf-localizacao').innerText = localizacaoNome || 'Registrado via GPS';
-                    document.getElementById('pdf-data').innerText = new Date().toLocaleString('pt-BR');
-                    
-                    const imgElem = document.getElementById('pdf-foto-preview');
-                    if (this.imagePreview) {
-                        imgElem.src = this.imagePreview;
-                        imgElem.style.display = 'inline-block';
-                    } else {
-                        imgElem.style.display = 'none';
-                    }
-
-                    const pdfTable = document.getElementById('pdf-checklist-table');
-                    pdfTable.innerHTML = "";
-                    for (const [key, label] of Object.entries(this.perguntas)) {
-                        const val = this.form.respostas[key] || "N/A";
-                        const color = val === "Sim" ? "#059669" : "#dc2626";
-                        pdfTable.innerHTML += `
-                            <tr>
-                                <td style="padding: 8px; border: 1px solid #cbd5e1; font-size: 10pt;">${label}</td>
-                                <td style="padding: 8px; border: 1px solid #cbd5e1; font-size: 10pt; width: 15%; text-align: center; font-weight: bold; color: ${color};">${val}</td>
-                            </tr>`;
-                    }
-
-                    const elem = document.getElementById('pdf-template');
-                    const nomeSlug = this.form.unidade_id.replace(/[^a-zA-Z0-9]/g, "_");
-
-                    const opt = {
-                        margin:       [10, 10, 10, 10],
-                        filename:     `Relatorio_${nomeSlug}.pdf`,
-                        image:        { type: 'jpeg', quality: 0.95 },
-                        html2canvas:  { 
-                            scale: 2, 
-                            useCORS: true, 
-                            logging: false,
-                            width: 794,
-                            backgroundColor: '#ffffff'
-                        },
-                        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-                    };
-
-                    try {
-                        await html2pdf().set(opt).from(elem).save();
-                        alert('Relatório gravado e PDF baixado com sucesso!');
-                        window.location.reload();
-                    } catch (err) {
-                        alert('Erro ao gerar o PDF: ' + err.message);
                         this.submitting = false;
                     }
                 }
