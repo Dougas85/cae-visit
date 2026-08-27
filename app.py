@@ -219,7 +219,7 @@ def salvar():
             "gestor_acompanha_qualidade": respostas_brutas.get("item_gestor_qualidade") == "Sim",
             "registros_normativos": respostas_brutas.get("item_registros_normativos") == "Sim",
             "sd_implantado_pratica": respostas_brutas.get("item_sd_pratica") == "Sim",
-            "gestores_acompanham_processos": respostas_brutas.get("item_acompanhamento_processos") == "Sim"
+            "gestores_acompanham_processos": respostas_brutas.get("item_acompanhamento_processos") == "Sim",
             "devolucao_diaria": respostas_brutas.get("item_devolucao") == "Sim"
         }
 
