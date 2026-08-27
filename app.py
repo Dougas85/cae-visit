@@ -14,9 +14,12 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 # Inicializa o cliente Supabase se as variáveis estiverem configuradas
 supabase: Client = None
 if SUPABASE_URL and SUPABASE_KEY:
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-else:
-    print("Aviso: SUPABASE_URL ou SUPABASE_KEY não foram encontradas nas variáveis de ambiente.")
+    try:
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    except Exception as e:
+        print9f"Erro ao inializar o cloiente Supabase: {e}")
+    else:
+        print("Aviso: SUPABASE_URL ou SUPABASE_KEY não foram encontradas nas variáveis de ambiente.")
 
 # Mapeamento dos nomes dos campos para os rótulos de exibição
 ITENS_LABELS = {
