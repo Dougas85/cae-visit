@@ -1,17 +1,16 @@
 import os
 import base64
 import uuid
-from datetime import datetime
+import requests
 from flask import Flask, render_template, request, jsonify
 from supabase import create_client, Client
 
 app = Flask(__name__)
 
-# Configuração Segura: Lê as chaves do ambiente (Vercel ou .env)
+# Configuração do Supabase
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
-# Inicialização protegida do Supabase
 supabase: Client = None
 
 if SUPABASE_URL and SUPABASE_KEY:
@@ -19,10 +18,8 @@ if SUPABASE_URL and SUPABASE_KEY:
         supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
     except Exception as e:
         print(f"Erro ao inicializar o cliente Supabase: {e}")
-else:
-    print("Aviso: SUPABASE_URL ou SUPABASE_KEY não foram encontradas nas variáveis de ambiente.")
 
-# Mapeamento dos nomes dos campos para os rótulos de exibição
+# Mapeamento mantido para formatação de relatórios/e-mails
 ITENS_LABELS = {
     "item_organizada": "A unidade está organizada?",
     "item_limpa": "A unidade está limpa?",
@@ -36,6 +33,23 @@ ITENS_LABELS = {
     "item_acompanhamento_processos": "Os gestores acompanham os processos internos?"
 }
 
+def obter_nome_localizacao(lat, lon):
+    try:
+        url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lon}"
+        headers = {'User-Agent': 'RelatorioVisitaApp/1.0'}
+        response = requests.get(url, headers=headers, timeout=5)
+        if response.status_code == 200:
+            dados = response.json().get('address', {})
+            cidade = dados.get('city') or dados.get('town') or dados.get('municipality') or 'Cidade N/D'
+            bairro = dados.get('suburb') or dados.get('neighbourhood') or ''
+            uf = dados.get('state_code') or ''
+            
+            local = f"{bairro}, {cidade}" if bairro else cidade
+            return f"{local} - {uf}" if uf else local
+    except Exception as e:
+        print(f"Erro na conversão de GPS: {e}")
+    return "Localização não identificada"
+
 
 @app.route("/")
 def index():
@@ -48,48 +62,55 @@ def salvar():
         dados = request.get_json() or {}
 
         coordenador = dados.get("coordenador", "").strip()
-        unidade_id = dados.get("unidade_id")
+        unidade_id = str(dados.get("unidade_id", "")).strip() # Texto
         clima = dados.get("clima")
         latitude = dados.get("latitude")
         longitude = dados.get("longitude")
         precisao = dados.get("precisao")
-        foto_base64 = dados.get("foto_base64")  # Imagem capturada em Data URL
+        foto_base64 = dados.get("foto_base64")
 
-        # Validações básicas
         if not coordenador or not unidade_id or not latitude or not longitude:
             return jsonify({
                 "status": "erro",
                 "mensagem": "Preencha todos os campos obrigatórios e garanta que o GPS esteja ativo."
             }), 400
 
+        # Converte GPS para nome de localização
+        localizacao_texto = obter_nome_localizacao(latitude, longitude)
         respostas_brutas = dados.get("respostas", {})
+
+        # Monta um resumo legível com base no ITENS_LABELS
+        resumo_itens = []
+        for chave, rotulo in ITENS_LABELS.items():
+            resposta = respostas_brutas.get(chave, "Não informado")
+            resumo_itens.append(f"{rotulo}: {resposta}")
+
         foto_url = None
 
-        # 1. Processamento e Upload da Foto para o Supabase Storage
+        # 1. Upload da Foto no Storage
         if supabase and foto_base64 and "," in foto_base64:
             try:
                 header, encoded = foto_base64.split(",", 1)
                 conteudo_imagem = base64.b64decode(encoded)
 
-                nome_arquivo = f"visita_u{unidade_id}_{uuid.uuid4().hex[:8]}.jpg"
+                unidade_slug = "".join(c for c in unidade_id if c.isalnum())
+                nome_arquivo = f"visita_{unidade_slug}_{uuid.uuid4().hex[:8]}.jpg"
                 caminho_storage = f"fotos_unidades/{nome_arquivo}"
 
-                # Upload para o Bucket 'evidencias-visitas'
                 supabase.storage.from_("evidencias-visitas").upload(
                     path=caminho_storage,
                     file=conteudo_imagem,
                     file_options={"content-type": "image/jpeg"}
                 )
 
-                # Obter URL Pública
                 foto_url = supabase.storage.from_("evidencias-visitas").get_public_url(caminho_storage)
             except Exception as e:
                 print(f"Erro ao salvar foto no Storage: {str(e)}")
 
-        # 2. Montagem do Payload para a Tabela 'relatorios_visita'
+        # 2. Payload da Tabela 'relatorios_visita'
         payload_banco = {
             "coordenador_nome": coordenador,
-            "unidade_id": int(unidade_id),
+            "unidade_id": unidade_id,
             "clima_organizacional": clima,
             "latitude_capturada": float(latitude),
             "longitude_capturada": float(longitude),
@@ -107,18 +128,21 @@ def salvar():
             "gestores_acompanham_processos": respostas_brutas.get("item_acompanhamento_processos") == "Sim"
         }
 
-        # 3. Gravação no PostgreSQL via Supabase API
+        # 3. Inserção no Supabase
         if supabase:
             resposta_db = supabase.table("relatorios_visita").insert(payload_banco).execute()
             relatorio_id = resposta_db.data[0]["id"] if resposta_db.data else None
         else:
-            relatorio_id = "Modo Local (Sem Supabase Conectado)"
+            relatorio_id = "Modo Local"
 
         return jsonify({
             "status": "sucesso",
-            "mensagem": "Relatório de visita registrado com sucesso!",
+            "mensagem": "Relatório registrado com sucesso!",
             "relatorio_id": relatorio_id,
-            "foto_url": foto_url
+            "localizacao_nome": localizacao_texto,
+            "resumo_detalhado": resumo_itens,
+            "foto_url": foto_url,
+            "destinatario": "douglas.francisco@correios.com.br"
         }), 200
 
     except Exception as e:
