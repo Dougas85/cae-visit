@@ -7,7 +7,7 @@
     <!-- Tailwind CSS & Alpine.js -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <!-- html2pdf.js para exportação direta do PDF -->
+    <!-- html2pdf.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style> 
@@ -85,7 +85,7 @@
                     </template>
                 </div>
 
-                <!-- Evidência Fotográfica em Tempo Real (ÚLTIMO TÓPICO DO FORMULÁRIO) -->
+                <!-- Evidência Fotográfica -->
                 <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
                     <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Registro Fotográfico</h2>
 
@@ -122,40 +122,40 @@
         </footer>
     </div>
 
-    <!-- TEMPLATE ESCONDIDO PARA O GERADOR DE PDF -->
-    <div id="pdf-template" style="display: none; padding: 25px; font-family: Arial, sans-serif; color: #1e293b;">
-        <div style="background-color: #0f172a; color: #ffffff; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-            <h2 style="margin:0; font-size:16pt;">Relatório de Inspeção Técnica</h2>
-            <p style="margin:0; font-size:9pt; color:#94a3b8;">Sistema Qualidade & Operações</p>
+    <!-- TEMPLATE DO PDF RENDEREIZADO FORA DA TELA VISÍVEL PARA COMPATIBILIDADE MOBILE -->
+    <div style="position: absolute; left: -9999px; top: 0; width: 794px; background-color: #ffffff; padding: 30px; font-family: Arial, sans-serif; color: #1e293b;" id="pdf-template">
+        <div style="background-color: #0f172a; color: #ffffff; padding: 20px; border-radius: 6px; margin-bottom: 20px;">
+            <h2 style="margin:0; font-size:18pt; font-weight: bold;">Relatório de Inspeção Técnica</h2>
+            <p style="margin:4px 0 0 0; font-size:10pt; color:#94a3b8;">Sistema Qualidade & Operações</p>
         </div>
 
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 10pt;">
             <tr>
-                <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: bold; background-color: #f1f5f9; width: 25%;">Coordenador:</td>
-                <td id="pdf-coordenador" style="padding: 8px; border: 1px solid #cbd5e1;"></td>
-                <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: bold; background-color: #f1f5f9; width: 20%;">Data/Hora:</td>
-                <td id="pdf-data" style="padding: 8px; border: 1px solid #cbd5e1;"></td>
+                <td style="padding: 10px; border: 1px solid #cbd5e1; font-weight: bold; background-color: #f8fafc; width: 25%;">Coordenador:</td>
+                <td id="pdf-coordenador" style="padding: 10px; border: 1px solid #cbd5e1;"></td>
+                <td style="padding: 10px; border: 1px solid #cbd5e1; font-weight: bold; background-color: #f8fafc; width: 20%;">Data/Hora:</td>
+                <td id="pdf-data" style="padding: 10px; border: 1px solid #cbd5e1;"></td>
             </tr>
             <tr>
-                <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: bold; background-color: #f1f5f9;">Unidade:</td>
-                <td id="pdf-unidade" style="padding: 8px; border: 1px solid #cbd5e1;"></td>
-                <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: bold; background-color: #f1f5f9;">Localização:</td>
-                <td id="pdf-localizacao" style="padding: 8px; border: 1px solid #cbd5e1;"></td>
+                <td style="padding: 10px; border: 1px solid #cbd5e1; font-weight: bold; background-color: #f8fafc;">Unidade:</td>
+                <td id="pdf-unidade" style="padding: 10px; border: 1px solid #cbd5e1;"></td>
+                <td style="padding: 10px; border: 1px solid #cbd5e1; font-weight: bold; background-color: #f8fafc;">Localização:</td>
+                <td id="pdf-localizacao" style="padding: 10px; border: 1px solid #cbd5e1;"></td>
             </tr>
             <tr>
-                <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: bold; background-color: #f1f5f9;">Clima Percebido:</td>
-                <td id="pdf-clima" colspan="3" style="padding: 8px; border: 1px solid #cbd5e1;"></td>
+                <td style="padding: 10px; border: 1px solid #cbd5e1; font-weight: bold; background-color: #f8fafc;">Clima Percebido:</td>
+                <td id="pdf-clima" colspan="3" style="padding: 10px; border: 1px solid #cbd5e1;"></td>
             </tr>
         </table>
 
-        <div style="font-size: 11pt; font-weight: bold; color: #0284c7; margin: 15px 0 8px 0;">Checklist de Conformidade</div>
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;" id="pdf-checklist-table">
+        <div style="font-size: 12pt; font-weight: bold; color: #0284c7; margin: 20px 0 10px 0; border-bottom: 2px solid #0284c7; padding-bottom: 4px;">Checklist de Conformidade</div>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;" id="pdf-checklist-table">
             <!-- Preenchido via JS -->
         </table>
 
-        <div style="font-size: 11pt; font-weight: bold; color: #0284c7; margin: 15px 0 8px 0;">Evidência Fotográfica</div>
-        <div style="text-align:center; margin-top:10px;">
-            <img id="pdf-foto-preview" style="max-width:100%; max-height:260px; border-radius:6px; border:1px solid #cbd5e1;">
+        <div style="font-size: 12pt; font-weight: bold; color: #0284c7; margin: 20px 0 10px 0; border-bottom: 2px solid #0284c7; padding-bottom: 4px;">Evidência Fotográfica</div>
+        <div style="text-align:center; margin-top:15px;" id="pdf-foto-container">
+            <img id="pdf-foto-preview" style="max-width:100%; max-height:350px; border-radius:8px; border:1px solid #cbd5e1; display:none;">
         </div>
     </div>
 
@@ -223,8 +223,21 @@
                     if (file) {
                         const reader = new FileReader();
                         reader.onload = (event) => {
-                            this.imagePreview = event.target.result;
-                            this.form.foto_base64 = event.target.result;
+                            // Redimensionar para evitar travar leitores mobile com imagens gigantes
+                            const img = new Image();
+                            img.src = event.target.result;
+                            img.onload = () => {
+                                const canvas = document.createElement('canvas');
+                                const MAX_WIDTH = 800;
+                                const scaleSize = MAX_WIDTH / img.width;
+                                canvas.width = MAX_WIDTH;
+                                canvas.height = img.height * scaleSize;
+                                const ctx = canvas.getContext('2d');
+                                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                                this.imagePreview = compressedBase64;
+                                this.form.foto_base64 = compressedBase64;
+                            };
                         };
                         reader.readAsDataURL(file);
                     }
@@ -239,9 +252,9 @@
                         });
                         const data = await res.json();
                         if (res.ok) {
-                            this.gerarPDF(data.localizacao_nome);
+                            await this.gerarPDF(data.localizacao_nome);
                         } else {
-                            alert('Erro: ' + data.mensagem);
+                            alert('Erro ao salvar: ' + data.mensagem);
                             this.submitting = false;
                         }
                     } catch (e) {
@@ -249,17 +262,21 @@
                         this.submitting = false;
                     }
                 },
-               gerarPDF(localizacaoNome) {
+                async gerarPDF(localizacaoNome) {
                     document.getElementById('pdf-coordenador').innerText = this.form.coordenador;
                     document.getElementById('pdf-unidade').innerText = this.form.unidade_id;
                     document.getElementById('pdf-clima').innerText = this.form.clima;
                     document.getElementById('pdf-localizacao').innerText = localizacaoNome || 'Registrado via GPS';
                     document.getElementById('pdf-data').innerText = new Date().toLocaleString('pt-BR');
                     
+                    const imgElem = document.getElementById('pdf-foto-preview');
                     if (this.imagePreview) {
-                        document.getElementById('pdf-foto-preview').src = this.imagePreview;
+                        imgElem.src = this.imagePreview;
+                        imgElem.style.display = 'inline-block';
+                    } else {
+                        imgElem.style.display = 'none';
                     }
-                
+
                     const pdfTable = document.getElementById('pdf-checklist-table');
                     pdfTable.innerHTML = "";
                     for (const [key, label] of Object.entries(this.perguntas)) {
@@ -267,35 +284,36 @@
                         const color = val === "Sim" ? "#059669" : "#dc2626";
                         pdfTable.innerHTML += `
                             <tr>
-                                <td style="padding: 6px; border: 1px solid #cbd5e1; font-size: 9pt;">${label}</td>
-                                <td style="padding: 6px; border: 1px solid #cbd5e1; font-size: 9pt; width: 15%; text-align: center; font-weight: bold; color: ${color};">${val}</td>
+                                <td style="padding: 8px; border: 1px solid #cbd5e1; font-size: 10pt;">${label}</td>
+                                <td style="padding: 8px; border: 1px solid #cbd5e1; font-size: 10pt; width: 15%; text-align: center; font-weight: bold; color: ${color};">${val}</td>
                             </tr>`;
                     }
-                
+
                     const elem = document.getElementById('pdf-template');
-                    elem.style.display = 'block';
-                
                     const nomeSlug = this.form.unidade_id.replace(/[^a-zA-Z0-9]/g, "_");
-                    
-                    // Configurações otimizadas para compatibilidade em telas de celulares
+
                     const opt = {
-                        margin:       10,
-                        filename:     `Relatorio_Inspecao_${nomeSlug}.pdf`,
+                        margin:       [10, 10, 10, 10],
+                        filename:     `Relatorio_${nomeSlug}.pdf`,
                         image:        { type: 'jpeg', quality: 0.95 },
                         html2canvas:  { 
                             scale: 2, 
                             useCORS: true, 
                             logging: false,
-                            backgroundColor: '#ffffff' // Garante fundo branco para não gerar página preta/transparente
+                            width: 794,
+                            backgroundColor: '#ffffff'
                         },
-                        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true }
+                        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
                     };
-                
-                    html2pdf().set(opt).from(elem).save().then(() => {
-                        elem.style.display = 'none';
-                        alert('Relatório registrado e PDF baixado com sucesso!');
+
+                    try {
+                        await html2pdf().set(opt).from(elem).save();
+                        alert('Relatório gravado e PDF baixado com sucesso!');
                         window.location.reload();
-                    });
+                    } catch (err) {
+                        alert('Erro ao gerar o PDF: ' + err.message);
+                        this.submitting = false;
+                    }
                 }
             }
         }
