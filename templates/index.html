@@ -4,24 +4,124 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Relatório de Visita Operacional</title>
-    <!-- CSS Bootstrap para estilização básica -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- html2pdf.js para exportação do PDF -->
+    <!-- html2pdf.js para exportação direta do PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
     <style>
-        /* Estilos específicos do modelo do PDF */
-        #pdf-template {
-            display: none; /* Fica oculto na tela do usuário */
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            color: #1e293b;
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
             padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .card {
             background-color: #ffffff;
+            width: 100%;
+            max-width: 600px;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        h2 {
+            color: #0d6efd;
+            margin-top: 0;
+            margin-bottom: 24px;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #333;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        input[type="text"], select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        input[type="text"]:focus, select:focus {
+            border-color: #0d6efd;
+        }
+
+        .question-block {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 14px;
+            margin-bottom: 12px;
+        }
+
+        .question-title {
+            font-size: 14px;
+            color: #212529;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .options-group {
+            display: flex;
+            gap: 20px;
+        }
+
+        .options-group label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: normal;
+            cursor: pointer;
+            margin: 0;
+        }
+
+        .btn-submit {
+            width: 100%;
+            background-color: #0d6efd;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
+        .btn-submit:hover {
+            background-color: #0b5ed7;
+        }
+
+        .btn-submit:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+
+        /* LAYOUT ESPECÍFICO DO PDF OCULTO */
+        #pdf-template {
+            display: none;
+            padding: 25px;
+            font-family: Arial, sans-serif;
+            color: #1e293b;
         }
         .pdf-header {
             background-color: #004080;
             color: #ffffff;
-            padding: 15px 20px;
+            padding: 15px;
             border-radius: 6px;
             margin-bottom: 20px;
         }
@@ -33,88 +133,148 @@
         .pdf-table td {
             padding: 8px 10px;
             border: 1px solid #cbd5e1;
-            font-size: 11pt;
+            font-size: 10pt;
         }
         .pdf-label {
             font-weight: bold;
             background-color: #f1f5f9;
-            width: 25%;
+            width: 30%;
         }
         .pdf-section {
-            font-size: 12pt;
+            font-size: 11pt;
             font-weight: bold;
             color: #004080;
             border-left: 4px solid #004080;
             padding-left: 8px;
-            margin: 15px 0 10px 0;
+            margin: 15px 0 8px 0;
         }
-        .pdf-box {
-            border: 1px solid #cbd5e1;
-            padding: 12px;
-            border-radius: 6px;
-            background-color: #f8fafc;
-            margin-bottom: 15px;
-            font-size: 10.5pt;
-        }
-        .badge-sim { color: #15803d; font-weight: bold; }
-        .badge-nao { color: #b91c1c; font-weight: bold; }
     </style>
 </head>
-<body class="bg-light p-3 p-md-5">
+<body>
 
-<div class="container bg-white p-4 rounded shadow-sm" style="max-width: 600px;">
-    <h3 class="mb-4 text-primary">Registrar Visita Operacional</h3>
-    
+<div class="card">
+    <h2>Registrar Visita Operacional</h2>
+
     <form id="formVisita">
-        <div class="mb-3">
-            <label class="form-label">Coordenador:</label>
-            <input type="text" id="coordenador" name="coordenador" class="form-control" required>
+        <div class="form-group">
+            <label>Coordenador:</label>
+            <input type="text" id="coordenador" required>
         </div>
 
-        <div class="mb-3">
-            <label class="form-label">Nome da Unidade:</label>
-            <input type="text" id="unidade" name="unidade" class="form-control" placeholder="Ex: CDD Presidente Prudente" required>
+        <div class="form-group">
+            <label>Nome da Unidade:</label>
+            <input type="text" id="unidade_id" placeholder="Ex: CDD Presidente Prudente" required>
         </div>
 
-        <div class="mb-3">
-            <label class="form-label">Foto da Visita:</label>
-            <input type="file" id="foto" name="foto" accept="image/*" class="form-control" required>
+        <div class="form-group">
+            <label>Clima Organizacional:</label>
+            <select id="clima" required>
+                <option value="">Selecione...</option>
+                <option value="Bom">Bom</option>
+                <option value="Regular">Regular</option>
+                <option value="Ruim">Ruim</option>
+            </select>
         </div>
 
-        <div class="mb-3 form-check">
-            <input type="checkbox" id="unidade_organizada" name="unidade_organizada" class="form-check-input">
-            <label class="form-check-label">Unidade Organizada</label>
+        <div class="form-group">
+            <label>Foto da Visita:</label>
+            <input type="file" id="foto_file" accept="image/*" capture="environment" required>
         </div>
 
-        <div class="mb-3 form-check">
-            <input type="checkbox" id="unidade_limpa" name="unidade_limpa" class="form-check-input">
-            <label class="form-check-label">Unidade Limpa</label>
+        <hr style="border: 0; border-top: 1px solid #e9ecef; margin: 20px 0;">
+
+        <!-- CHECKLIST COMPLETA DAS 10 PERGUNTAS -->
+        <div id="checklist-container">
+            <div class="question-block">
+                <div class="question-title">A unidade está organizada?</div>
+                <div class="options-group">
+                    <label><input type="radio" name="item_organizada" value="Sim" required> Sim</label>
+                    <label><input type="radio" name="item_organizada" value="Não"> Não</label>
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-title">A unidade está limpa?</div>
+                <div class="options-group">
+                    <label><input type="radio" name="item_limpa" value="Sim" required> Sim</label>
+                    <label><input type="radio" name="item_limpa" value="Não"> Não</label>
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-title">A unidade está com o efetivo previsto?</div>
+                <div class="options-group">
+                    <label><input type="radio" name="item_efetivo" value="Sim" required> Sim</label>
+                    <label><input type="radio" name="item_efetivo" value="Não"> Não</label>
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-title">Há resíduo de mesa simples?</div>
+                <div class="options-group">
+                    <label><input type="radio" name="item_residuo_mesa" value="Sim" required> Sim</label>
+                    <label><input type="radio" name="item_residuo_mesa" value="Não"> Não</label>
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-title">Existem objetos sem indução?</div>
+                <div class="options-group">
+                    <label><input type="radio" name="item_objetos_sem_inducao" value="Sim" required> Sim</label>
+                    <label><input type="radio" name="item_objetos_sem_inducao" value="Não"> Não</label>
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-title">O lado previsto para saída no SROWEB saiu para entrega?</div>
+                <div class="options-group">
+                    <label><input type="radio" name="item_sro_saida" value="Sim" required> Sim</label>
+                    <label><input type="radio" name="item_sro_saida" value="Não"> Não</label>
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-title">O gestor acompanha os resultados de qualidade?</div>
+                <div class="options-group">
+                    <label><input type="radio" name="item_gestor_qualidade" value="Sim" required> Sim</label>
+                    <label><input type="radio" name="item_gestor_qualidade" value="Não"> Não</label>
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-title">Os registros nos sistemas estão conforme os normativos?</div>
+                <div class="options-group">
+                    <label><input type="radio" name="item_registros_normativos" value="Sim" required> Sim</label>
+                    <label><input type="radio" name="item_registros_normativos" value="Não"> Não</label>
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-title">O SD está implantado na prática conforme o previsto?</div>
+                <div class="options-group">
+                    <label><input type="radio" name="item_sd_pratica" value="Sim" required> Sim</label>
+                    <label><input type="radio" name="item_sd_pratica" value="Não"> Não</label>
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-title">Os gestores acompanham os processos internos?</div>
+                <div class="options-group">
+                    <label><input type="radio" name="item_acompanhamento_processos" value="Sim" required> Sim</label>
+                    <label><input type="radio" name="item_acompanhamento_processos" value="Não"> Não</label>
+                </div>
+            </div>
         </div>
 
-        <div class="mb-3 form-check">
-            <input type="checkbox" id="efetivo_previsto" name="efetivo_previsto" class="form-check-input">
-            <label class="form-check-label">Efetivo Conforme Previsto</label>
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Resumo e Observações:</label>
-            <textarea id="resumo" name="resumo" class="form-control" rows="3" required></textarea>
-        </div>
-
-        <!-- Campos Ocultos para Localização -->
-        <input type="hidden" id="latitude" name="latitude">
-        <input type="hidden" id="longitude" name="longitude">
-        <input type="hidden" id="localizacao_nome" name="localizacao_nome">
-
-        <button type="submit" id="btnEnviar" class="btn btn-primary w-100">Concluir e Enviar Relatório</button>
+        <button type="submit" id="btnEnviar" class="btn-submit">Concluir e Enviar Relatório</button>
     </form>
 </div>
 
-<!-- TEMPLATE OCULTO PARA A GERAÇÃO DO PDF -->
+<!-- TEMPLATE FORMATADO DE RELATÓRIO PDF -->
 <div id="pdf-template">
     <div class="pdf-header">
-        <h2 style="margin:0;">Relatório de Visita Operacional</h2>
-        <p style="margin:0; opacity:0.8; font-size:10pt;">Acompanhamento de Unidades</p>
+        <h2 style="margin:0; color:#fff;">Relatório de Visita Operacional</h2>
+        <p style="margin:0; font-size:10pt; opacity:0.9;">Acompanhamento e Gestão de Unidades</p>
     </div>
 
     <table class="pdf-table">
@@ -130,125 +290,162 @@
             <td class="pdf-label">Localização:</td>
             <td id="pdf-localizacao"></td>
         </tr>
+        <tr>
+            <td class="pdf-label">Clima Organizacional:</td>
+            <td id="pdf-clima" colspan="3"></td>
+        </tr>
     </table>
 
-    <div class="pdf-section">Checklist de Conformidade</div>
-    <div class="pdf-box">
-        <div>Organização: <span id="pdf-org"></span></div>
-        <div>Limpeza: <span id="pdf-limp"></span></div>
-        <div>Efetivo Previsto: <span id="pdf-efe"></span></div>
-    </div>
-
-    <div class="pdf-section">Resumo da Visita</div>
-    <div class="pdf-box" id="pdf-resumo-texto"></div>
+    <div class="pdf-section">Resumo do Checklist</div>
+    <table class="pdf-table" id="pdf-checklist-table">
+        <!-- Preenchido via JS -->
+    </table>
 
     <div class="pdf-section">Evidência Fotográfica</div>
     <div style="text-align:center; margin-top:10px;">
-        <img id="pdf-img-preview" style="max-width: 100%; max-height: 300px; border-radius: 6px; border: 1px solid #cbd5e1;">
+        <img id="pdf-foto-preview" style="max-width:100%; max-height:280px; border-radius:6px; border:1px solid #cbd5e1;">
     </div>
 </div>
 
 <script>
-    // Captura inicial da localização
+    let latitude = null, longitude = null, precisao = null;
+
+    // Captura inicial da localização GPS
     window.onload = () => {
         if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(position => {
-                document.getElementById('latitude').value = position.coords.latitude;
-                document.getElementById('longitude').value = position.coords.longitude;
-            });
+            navigator.geolocation.getCurrentPosition(pos => {
+                latitude = pos.coords.latitude;
+                longitude = pos.coords.longitude;
+                precisao = pos.coords.accuracy;
+            }, err => console.log("Erro GPS:", err), { enableHighAccuracy: true });
         }
     };
 
-    // Geocodificação Reversa (Converte Lat/Lon em Nome da Cidade/Bairro)
-    async function obterNomeLocalizacao(lat, lon) {
-        if (!lat || !lon) return "Localização não registrada";
-        try {
-            const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
-            const data = await resp.json();
-            const cidade = data.address.city || data.address.town || data.address.municipality || 'Cidade não identificada';
-            const bairro = data.address.suburb || data.address.neighbourhood || '';
-            const uf = data.address.state ? ` - ${data.address.state_district || ''}` : '';
-            
-            return bairro ? `${bairro}, ${cidade}` : cidade;
-        } catch {
-            return "Localização Indisponível";
-        }
+    function converterImagemBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+        });
     }
 
-    // Processo de envio e geração do PDF
     document.getElementById('formVisita').addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+
+        if (!latitude || !longitude) {
+            alert("Aguarde a ativação da sua localização GPS antes de enviar.");
+            return;
+        }
+
         const btn = document.getElementById('btnEnviar');
         btn.disabled = true;
-        btn.innerText = "Processando e Gerando PDF...";
+        btn.innerText = "Enviando e gerando PDF...";
 
-        const lat = document.getElementById('latitude').value;
-        const lon = document.getElementById('longitude').value;
+        // Coleta respostas das 10 perguntas
+        const chaves = [
+            "item_organizada", "item_limpa", "item_efetivo", "item_residuo_mesa",
+            "item_objetos_sem_inducao", "item_sro_saida", "item_gestor_qualidade",
+            "item_registros_normativos", "item_sd_pratica", "item_acompanhamento_processos"
+        ];
 
-        // 1. Converte coordenadas para Endereço
-        const localizacaoTexto = await obterNomeLocalizacao(lat, lon);
-        document.getElementById('localizacao_nome').value = localizacaoTexto;
+        const respostas = {};
+        chaves.forEach(chave => {
+            const op = document.querySelector(`input[name="${chave}"]:checked`);
+            respostas[chave] = op ? op.value : "Não informado";
+        });
 
-        // 2. Prepara o envio para o Flask/Supabase
-        const formData = new FormData(e.target);
+        const fileInput = document.getElementById('foto_file');
+        let fotoBase64 = "";
+        if (fileInput.files.length > 0) {
+            fotoBase64 = await converterImagemBase64(fileInput.files[0]);
+        }
+
+        const payload = {
+            coordenador: document.getElementById('coordenador').value,
+            unidade_id: document.getElementById('unidade_id').value,
+            clima: document.getElementById('clima').value,
+            latitude: latitude,
+            longitude: longitude,
+            precisao: precisao,
+            foto_base64: fotoBase64,
+            respostas: respostas
+        };
 
         try {
-            const res = await fetch('/salvar', { method: 'POST', body: formData });
+            const res = await fetch('/salvar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
             const result = await res.json();
 
             if (res.ok) {
-                // 3. Preenche o template oculto do PDF
-                document.getElementById('pdf-coordenador').innerText = document.getElementById('coordenador').value;
-                document.getElementById('pdf-unidade').innerText = document.getElementById('unidade').value;
-                document.getElementById('pdf-localizacao').innerText = localizacaoTexto;
+                // Preenche os dados do PDF
+                document.getElementById('pdf-coordenador').innerText = payload.coordenador;
+                document.getElementById('pdf-unidade').innerText = payload.unidade_id;
+                document.getElementById('pdf-clima').innerText = payload.clima;
+                document.getElementById('pdf-localizacao').innerText = result.localizacao_nome || "Local Registrado";
                 document.getElementById('pdf-data').innerText = new Date().toLocaleString('pt-BR');
-                document.getElementById('pdf-resumo-texto').innerText = document.getElementById('resumo').value;
+                document.getElementById('pdf-foto-preview').src = fotoBase64;
 
-                document.getElementById('pdf-org').innerHTML = document.getElementById('unidade_organizada').checked ? '<span class="badge-sim">SIM</span>' : '<span class="badge-nao">NÃO</span>';
-                document.getElementById('pdf-limp').innerHTML = document.getElementById('unidade_limpa').checked ? '<span class="badge-sim">SIM</span>' : '<span class="badge-nao">NÃO</span>';
-                document.getElementById('pdf-efe').innerHTML = document.getElementById('efetivo_previsto').checked ? '<span class="badge-sim">SIM</span>' : '<span class="badge-nao">NÃO</span>';
+                // Tabela com todas as 10 respostas formatadas no PDF
+                const pdfTable = document.getElementById('pdf-checklist-table');
+                pdfTable.innerHTML = "";
+                
+                const labels = {
+                    "item_organizada": "A unidade está organizada?",
+                    "item_limpa": "A unidade está limpa?",
+                    "item_efetivo": "A unidade está com o efetivo previsto?",
+                    "item_residuo_mesa": "Há resíduo de mesa simples?",
+                    "item_objetos_sem_inducao": "Existem objetos sem indução?",
+                    "item_sro_saida": "O lado previsto para saída no SROWEB saiu?",
+                    "item_gestor_qualidade": "O gestor acompanha os resultados de qualidade?",
+                    "item_registros_normativos": "Registros nos sistemas conforme normativos?",
+                    "item_sd_pratica": "O SD está implantado na prática?",
+                    "item_acompanhamento_processos": "Gestores acompanham processos internos?"
+                };
 
-                // Carrega a foto no PDF
-                const fileFoto = document.getElementById('foto').files[0];
-                if (fileFoto) {
-                    const reader = new FileReader();
-                    reader.onload = function (e) {
-                        document.getElementById('pdf-img-preview').src = e.target.result;
-                        gerarEBaixarPDF();
-                    };
-                    reader.readAsDataURL(fileFoto);
-                } else {
-                    gerarEBaixarPDF();
+                for (const [k, labelText] of Object.entries(labels)) {
+                    const val = respostas[k] || "N/A";
+                    const color = val === "Sim" ? "green" : "red";
+                    pdfTable.innerHTML += `
+                        <tr>
+                            <td>${labelText}</td>
+                            <td style="width: 20%; text-align: center; font-weight: bold; color: ${color};">${val}</td>
+                        </tr>`;
                 }
+
+                gerarPDF(payload.unidade_id);
             } else {
                 alert("Erro ao salvar: " + result.mensagem);
                 btn.disabled = false;
                 btn.innerText = "Concluir e Enviar Relatório";
             }
         } catch (err) {
-            alert("Erro na conexão com o servidor.");
+            alert("Erro de comunicação com o servidor.");
             btn.disabled = false;
             btn.innerText = "Concluir e Enviar Relatório";
         }
     });
 
-    function gerarEBaixarPDF() {
-        const element = document.getElementById('pdf-template');
-        element.style.display = 'block'; // Exibe temporariamente para renderização
+    function gerarPDF(unidadeNome) {
+        const elem = document.getElementById('pdf-template');
+        elem.style.display = 'block';
 
-        const nomeUnidade = document.getElementById('unidade').value.replace(/[^a-zA-Z0-9]/g, "_");
+        const nomeSlug = unidadeNome.replace(/[^a-zA-Z0-9]/g, "_");
         const opt = {
             margin:       10,
-            filename:     `Relatorio_Visita_${nomeUnidade}.pdf`,
+            filename:     `Relatorio_Visita_${nomeSlug}.pdf`,
             image:        { type: 'jpeg', quality: 0.98 },
             html2canvas:  { scale: 2 },
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
-        html2pdf().set(opt).from(element).save().then(() => {
-            element.style.display = 'none'; // Oculta novamente
-            alert("Relatório salvo no banco de dados e PDF gerado com sucesso!");
+        html2pdf().set(opt).from(elem).save().then(() => {
+            elem.style.display = 'none';
+            alert("Relatório salvo e PDF gerado com sucesso!");
             window.location.reload();
         });
     }
