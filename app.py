@@ -38,7 +38,9 @@ ITENS_LABELS = {
     "item_gestor_qualidade": "7. O gestor acompanha os resultados de qualidade?",
     "item_registros_normativos": "8. Os registros nos sistemas estão conforme os normativos?",
     "item_sd_pratica": "9. O SD está implantado na prática conforme o previsto?",
-    "item_acompanhamento_processos": "10. Os gestores acompanham os processos internos?"
+    "item_acompanhamento_processos": "10. Os gestores acompanham os processos internos?",
+    "item_devolucao": "11. As devoluções de objetos estão sendo realizadas diariamente conforme o previsto?"
+    
 }
 
 def obter_nome_localizacao(lat, lon):
@@ -218,6 +220,7 @@ def salvar():
             "registros_normativos": respostas_brutas.get("item_registros_normativos") == "Sim",
             "sd_implantado_pratica": respostas_brutas.get("item_sd_pratica") == "Sim",
             "gestores_acompanham_processos": respostas_brutas.get("item_acompanhamento_processos") == "Sim"
+            "devolucao_diaria": respostas_brutas.get("item_devolucao") == "Sim"
         }
 
         if supabase:
