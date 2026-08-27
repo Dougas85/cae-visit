@@ -249,7 +249,7 @@
                         this.submitting = false;
                     }
                 },
-                gerarPDF(localizacaoNome) {
+               gerarPDF(localizacaoNome) {
                     document.getElementById('pdf-coordenador').innerText = this.form.coordenador;
                     document.getElementById('pdf-unidade').innerText = this.form.unidade_id;
                     document.getElementById('pdf-clima').innerText = this.form.clima;
@@ -259,7 +259,7 @@
                     if (this.imagePreview) {
                         document.getElementById('pdf-foto-preview').src = this.imagePreview;
                     }
-
+                
                     const pdfTable = document.getElementById('pdf-checklist-table');
                     pdfTable.innerHTML = "";
                     for (const [key, label] of Object.entries(this.perguntas)) {
@@ -271,19 +271,26 @@
                                 <td style="padding: 6px; border: 1px solid #cbd5e1; font-size: 9pt; width: 15%; text-align: center; font-weight: bold; color: ${color};">${val}</td>
                             </tr>`;
                     }
-
+                
                     const elem = document.getElementById('pdf-template');
                     elem.style.display = 'block';
-
+                
                     const nomeSlug = this.form.unidade_id.replace(/[^a-zA-Z0-9]/g, "_");
+                    
+                    // Configurações otimizadas para compatibilidade em telas de celulares
                     const opt = {
                         margin:       10,
                         filename:     `Relatorio_Inspecao_${nomeSlug}.pdf`,
-                        image:        { type: 'jpeg', quality: 0.98 },
-                        html2canvas:  { scale: 2 },
-                        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                        image:        { type: 'jpeg', quality: 0.95 },
+                        html2canvas:  { 
+                            scale: 2, 
+                            useCORS: true, 
+                            logging: false,
+                            backgroundColor: '#ffffff' // Garante fundo branco para não gerar página preta/transparente
+                        },
+                        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true }
                     };
-
+                
                     html2pdf().set(opt).from(elem).save().then(() => {
                         elem.style.display = 'none';
                         alert('Relatório registrado e PDF baixado com sucesso!');
